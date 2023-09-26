@@ -1,0 +1,5 @@
+<cache-template name="idempotent-repo">
+    <key-type>java.lang.Integer</key-type>
+    <value-type>java.lang.Integer</value-type>
+    <heap unit="entries">10</heap>
+</cache-template>
