@@ -40,11 +40,8 @@ public class GardianConnector extends Main {
         // And create the API client
         ElasticsearchClient client = new ElasticsearchClient(transport);
 
-
-
         KafkaIdempotentRepository kafkaIdempotentRepository =
                 new KafkaIdempotentRepository("idempotent-db-inserts", "localhost:9091");
-
 
         // Registry Bindings
         DefaultRegistry registry = (DefaultRegistry) camelContext.getRegistry();
@@ -52,7 +49,6 @@ public class GardianConnector extends Main {
         registry.bind("insertDbIdemRepo", kafkaIdempotentRepository);
 
         ((org.apache.camel.impl.DefaultCamelContext) camelContext).setRegistry(registry);
-
 
         try {
             camelContext.addRoutes(new GardianRouter());

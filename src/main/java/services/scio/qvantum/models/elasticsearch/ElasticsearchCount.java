@@ -23,7 +23,6 @@ public class ElasticsearchCount {
     public ElasticsearchCount(Integer count, Shards shards) {
         this.count = count;
         this.shards = shards;
-        this.additionalProperties = additionalProperties;
     }
 
     @JsonProperty("count")
