@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Iterator;
 
 
 public class GardianBean {
@@ -54,28 +55,7 @@ public class GardianBean {
 
             if (hits != null
                     && !hits.isEmpty()) {
-
-                //get resources from hits
-                for (Hit<Map> hit: hits) {
-                    Map metadataDocument = hit.source();
-
-                    if(Objects.requireNonNull(metadataDocument).get("resource_files") != null){
-                        ArrayList<Map> files = (ArrayList<Map>)metadataDocument
-                                .get("resource_files");
-                        if(!files.isEmpty()){
-                            String mimeType = files.get(0).get("mime_type").toString();
-                            if(mimeType.equalsIgnoreCase("text/pdf")){
-                                String url = ((ArrayList<Map>)files.get(0).get("location")).get(0).get("url").toString();
-                                Resource resource =
-                                        new Resource(
-                                                metadataDocument.get("dataHARVEST_id").toString(),
-                                                url);
-                                resources.add(resource);
-                                logger.debug(resource.toString());
-                            }
-                        }
-                    }
-                }
+                resources = getResourcesFromHits(resources, hits);
             }
             else {
                 exchange.getIn().setHeader("loop", false);
@@ -88,8 +68,8 @@ public class GardianBean {
         return resources;
     }
 
-    public ArrayList<Resource> getOpenDocuments(Exchange exchange) {
 
+    public ArrayList<Resource> getOpenDocuments(Exchange exchange) {
 
         ElasticsearchClient client = exchange.getContext().getRegistry()
                 .lookupByNameAndType("es_client",ElasticsearchClient.class);
@@ -113,27 +93,7 @@ public class GardianBean {
             List<Hit<Map>> hits = scrollResponse.hits().hits();
 
             if (!hits.isEmpty()) {
-
-                for (Hit<Map> hit : hits) {
-                    Map metadataDocument = hit.source();
-
-                    if (Objects.requireNonNull(metadataDocument).get("resource_files") != null) {
-                        ArrayList<Map> files = (ArrayList<Map>) metadataDocument
-                                .get("resource_files");
-                        if (!files.isEmpty()) {
-                            String mimeType = files.get(0).get("mime_type").toString();
-                            if (mimeType.equalsIgnoreCase("text/pdf")) {
-                                String url = ((ArrayList<Map>) files.get(0).get("location")).get(0).get("url").toString();
-                                Resource resource =
-                                        new Resource(
-                                                metadataDocument.get("dataHARVEST_id").toString(),
-                                                url);
-                                resources.add(resource);
-                                logger.debug(resource.toString());
-                            }
-                        }
-                    }
-                }
+                resources = getResourcesFromHits(resources, hits);
             }
             else {
                 System.out.println("No more hits time to stop looping");
@@ -149,68 +109,33 @@ public class GardianBean {
 
     }
 
+    private ArrayList<Resource> getResourcesFromHits (ArrayList<Resource> resources, List<Hit<Map>> hits) {
+        for (Hit<Map> hit : hits) {
+            Map metadataDocument = hit.source();
 
-//    public ArrayList<Resource> getOpenDocuments(Exchange exchange) {
-//
-//        String alias  = exchange.getProperty("alias",String.class);
-//        int size  = exchange.getProperty("size",Integer.class);
-//        int from  = exchange.getProperty("from",Integer.class);
-//
-//        ElasticsearchClient client = exchange.getContext().getRegistry()
-//                .lookupByNameAndType("es_client",ElasticsearchClient.class);
-//
-//        try {
-//            SearchResponse<Map> response = client.search(s -> s
-//                            .index(alias)
-//                            .query(q -> q
-//                                    .match(
-//                                            m -> m
-//                                                    .field("rights.access")
-//                                                    .query("Open")
-//                                    )
-//                            )
-//                            .from(from)
-//                            .size(size),
-//                    Map.class
-//            );
-//            List<Hit<Map>> hits = response.hits().hits();
-//
-//            ArrayList<Resource> resources = new ArrayList<>();
-//            for (Hit<Map> hit: hits) {
-//                Map metadataDocument = hit.source();
-//
-//                if(Objects.requireNonNull(metadataDocument).get("resource_files") != null){
-//                    ArrayList<Map> files = (ArrayList<Map>)metadataDocument
-//                            .get("resource_files");
-//                    if(!files.isEmpty()){
-//                        String mimeType = files.get(0).get("mime_type").toString();
-//                        if(mimeType.equalsIgnoreCase("text/pdf")){
-//                            String url = ((ArrayList<Map>)files.get(0).get("location")).get(0).get("url").toString();
-//                            Resource resource =
-//                                    new Resource(
-//                                            metadataDocument.get("dataHARVEST_id").toString(),
-//                                            url);
-//                            resources.add(resource);
-//                            logger.debug(resource.toString());
-//                        }
-//                    }
-//                }
-//
-//            }
-//
-//            logger.info("Gathered Resources: "+resources.size());
-//            logger.info("From: "+from);
-//            logger.info("Size: "+size);
-//            Integer newFrom = from + size;
-//            System.out.println(from);
-//            exchange.setProperty("from", newFrom);
-//            return resources;
-//
-//        } catch (IOException e) {
-//            return null;
-//            /*ElasticsearchError ee = new ElasticsearchError(alias,"isCGIAR",e.getMessage());
-//            logger.error(ee);*/
-//        }
-//    }
+            if (Objects.requireNonNull(metadataDocument).get("resource_files") != null) {
+                ArrayList<Map> files = (ArrayList<Map>) metadataDocument
+                        .get("resource_files");
+                if (!files.isEmpty()) {
+                    Iterator<Map> it = files.iterator();
+                    while (it.hasNext()){
+                        Map file = it.next();
+                        String mimeType = file.get("mime_type").toString();
+                        if(mimeType.equalsIgnoreCase("text/pdf")){
+                            String url = ((ArrayList<Map>)file.get("location")).get(0).get("url").toString();
+                            Resource resource =
+                                    new Resource(
+                                            metadataDocument.get("dataHARVEST_id").toString(),
+                                            url);
+                            resources.add(resource);
+                            logger.debug(resource.toString());
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        return resources;
+    }
 
 }
