@@ -22,7 +22,7 @@ import java.util.Objects;
 public class GardianBean {
 
     private static final Logger logger = LogManager.getLogger(GardianBean.class);
-//    private static final int SCROLL_SIZE = 5000;
+    private static final int SCROLL_SIZE = 1000;
 
     public ArrayList<Resource> getOpenDocsInitialScroll (Exchange exchange) {
         String alias  = exchange.getProperty("alias",String.class);
@@ -42,8 +42,8 @@ public class GardianBean {
                                                     .query("Open")
                                     )
                             )
-                            .scroll(Time.of(t->t.time("1m"))),
-//                            .size(SCROLL_SIZE),
+                            .size(SCROLL_SIZE)
+                            .scroll(Time.of(t->t.time("10m"))),
                     Map.class
             );
 
@@ -102,7 +102,7 @@ public class GardianBean {
             String finalScrollId = scrollID;
 //            System.out.println(finalScrollId);
             ScrollRequest sr = ScrollRequest.of(a -> a
-                    .scrollId(finalScrollId).scroll(Time.of(t->t.time("1m"))));
+                    .scrollId(finalScrollId).scroll(Time.of(t->t.time("10m"))));
 
             ScrollResponse<Map> scrollResponse = client.scroll(sr, Map.class);
 

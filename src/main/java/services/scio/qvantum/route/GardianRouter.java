@@ -9,15 +9,23 @@ import services.scio.qvantum.beans.GardianBean;
 import services.scio.qvantum.models.elasticsearch.ElasticsearchCount;
 import services.scio.qvantum.models.resource.Resource;
 import services.scio.qvantum.process.ExceptionHandler;
+import org.elasticsearch.search.SearchContextMissingException;
 
 public class GardianRouter extends RouteBuilder {
     @Override
     public void configure() throws Exception {
 
+        onException(SearchContextMissingException.class)
+                .handled(false)
+                .process(new ExceptionHandler())
+                .marshal().json()
+                .to("file://C:\\Users\\Anastasis\\Desktop\\gardianConnector\\errors\\");
+
         onException(Exception.class)
                 .handled(true)
                 .process(new ExceptionHandler())
-                .to("log:?level=ERROR&showAll=true&showCaughtException=true");
+                .marshal().json()
+                .to("file://C:\\Users\\Anastasis\\Desktop\\gardianConnector\\errors\\");
 
         from("direct:fetch-gardian-documents")
                 .routeId("fetch_gardian_documents")
@@ -28,9 +36,9 @@ public class GardianRouter extends RouteBuilder {
                 .to("seda:dispatch")
                 .end()
                 .loopDoWhile(simple("${in.header:loop}"))
-                    .bean(GardianBean.class,"getOpenDocuments")
-                    .split(body())
-                    .to("seda:dispatch");
+                .bean(GardianBean.class,"getOpenDocuments")
+                .split(body())
+                .to("seda:dispatch");
 
         from("seda:dispatch")
                 .routeId("dispatch")
@@ -39,3 +47,4 @@ public class GardianRouter extends RouteBuilder {
 
     }
 }
+
